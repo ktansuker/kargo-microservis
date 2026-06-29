@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # 1. Altyapı: RabbitMQ (Sabit Container)
+  rabbitmq:
+    image: rabbitmq:3-management
+    networks:
+      - kargo_network # <--- BUNU EKLE
+    container_name: kargo_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    restart: unless-stopped
+
+  # 2. Altyapı: PostgreSQL (Sabit Container)
+  postgres:
+    image: postgres:15
+    networks:
+      - kargo_network # <--- BUNU EKLE
+    container_name: kargo_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: kargouser
+      POSTGRES_PASSWORD: kargopassword
+      POSTGRES_DB: kargodb
+    restart: unless-stopped
+
+  # 3. Kargo API Container'ı
+  kargo-api:
+    build:
+      context: ./kargo-api
+      dockerfile: Dockerfile
+    container_name: kargo_api_service
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=kargouser
+      - DB_PASSWORD=kargopassword
+      - DB_DATABASE=kargodb
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    networks:
+      - kargo_network
+    ports:
+      - "3000:3000"
+    depends_on:
+      - rabbitmq
+      - postgres
+    restart: always
+
+  # 4. Kargo Job (Worker) Container'ı
+ # --- 1. İŞÇİ: BORUSAN WORKER ---
+  borusan_worker:
+    build:
+      context: ./kargo-worker
+    container_name: borusan_worker_service
+    environment:
+      - CARGO_PROVIDER=Borusan
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=kargouser
+      - DB_PASSWORD=kargopassword
+      - DB_DATABASE=kargodb
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - rabbitmq
+      - postgres
+    networks:
+      - kargo_network
+    restart: always
+
+  aras_worker:
+    build:
+      context: ./kargo-worker
+    container_name: aras_worker_service
+    environment:
+      - CARGO_PROVIDER=Aras
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=kargouser
+      - DB_PASSWORD=kargopassword
+      - DB_DATABASE=kargodb
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - rabbitmq
+      - postgres
+    networks:
+      - kargo_network
+    restart: always
+networks:
+  kargo_network:
+    driver: bridge

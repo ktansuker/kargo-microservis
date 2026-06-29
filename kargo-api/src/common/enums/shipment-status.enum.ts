@@ -1,0 +1,15 @@
+/* eslint-disable */
+export enum ShipmentStatus {
+  PENDING = 'BEKLIYOR',
+  SUCCESS = 'BASARILI',
+  RETRYING = 'YENIDEN_DENENIYOR',
+  FAILED = 'HATALI_DMQ', 
+
+  // Borusan Lojistik PDF Statü Kodları
+  BORUSAN_CREATED = 'CRE',
+  BORUSAN_AT_LOGISTICS = 'LOC',
+  BORUSAN_ON_WAY = 'YOL',
+  BORUSAN_DELIVERED = 'DEL',
+  BORUSAN_NOT_DELIVERED = 'NDEL',
+  BORUSAN_CANCELLED = 'CAN'
+}
