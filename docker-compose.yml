@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   # 1. Altyapı: RabbitMQ (Sabit Container)
@@ -65,9 +65,13 @@ services:
       - DB_PASSWORD=kargopassword
       - DB_DATABASE=kargodb
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - CARGO_API_BASE_URL=http://host.docker.internal:8000
+      - CARGO_API_USERNAME=PO_ARVATO_DEV
+      - CARGO_API_PASSWORD=Arvato321!
     depends_on:
       - rabbitmq
       - postgres
+      - kargo-api
     networks:
       - kargo_network
     restart: always
@@ -84,9 +88,13 @@ services:
       - DB_PASSWORD=kargopassword
       - DB_DATABASE=kargodb
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - CARGO_API_BASE_URL=http://host.docker.internal:8000
+      - CARGO_API_USERNAME=PO_ARVATO_DEV
+      - CARGO_API_PASSWORD=Arvato321!
     depends_on:
       - rabbitmq
       - postgres
+      - kargo-api
     networks:
       - kargo_network
     restart: always

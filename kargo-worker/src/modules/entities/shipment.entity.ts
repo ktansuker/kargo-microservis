@@ -19,7 +19,7 @@ export class Shipment {
   status!: string; // Bekliyor, Başarılı, Hatalı
 
   @Column({ type: 'text', nullable: true })
-  errorMessage?: string; // nullable olduğu için soru işareti koyabiliriz
+  errorMessage?: string; 
 
   @CreateDateColumn()
   createdAt!: Date;

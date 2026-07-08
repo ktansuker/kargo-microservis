@@ -2,20 +2,20 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Shipment } from './shipment.entity';
+import { Shipment } from '../entities/shipment.entity';
 import * as amqp from 'amqplib';
 import { validateSync } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 
 // Yeni eklediğimiz importlar!
-import { CreateShipmentDto } from './common/dtos/create-shipment.dto';
-import { ShipmentStatus } from './common/enums/shipment-status.enum';
+import { CreateShipmentDto } from '../dtos/create-shipment.dto';
+import { ShipmentStatus } from '../../../common/enums/shipment-status.enum';
 
 @Injectable()
-export class AppService implements OnModuleInit, OnModuleDestroy {
+export class ShipmentService implements OnModuleInit, OnModuleDestroy {
   private connection: any;
   private channel: any;
-  private readonly logger = new Logger(AppService.name);
+  private readonly logger = new Logger(ShipmentService.name);
 
   constructor(
     @InjectRepository(Shipment)
@@ -23,14 +23,25 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   async onModuleInit() {
-    try {
-      this.connection = await amqp.connect('amqp://guest:guest@rabbitmq:5672');
-      this.channel = await this.connection.createChannel();
-      this.logger.log('RabbitMQ bağlantısı başarılı (API)');
-    } catch (error) {
-      this.logger.error('RabbitMQ bağlantı hatası:', error);
-    }
+  await this.connectToBroker();
+}
+
+private async connectToBroker(): Promise<void> {
+  try {
+    this.connection = await amqp.connect('amqp://guest:guest@rabbitmq:5672'); // değişmedi
+    this.channel = await this.connection.createChannel();
+    this.logger.log('RabbitMQ bağlantısı başarılı (API)');
+
+    this.connection.on('close', () => {
+      this.logger.warn('RabbitMQ bağlantısı koptu, yeniden bağlanılıyor...');
+      this.channel = null;
+      setTimeout(() => this.connectToBroker(), 5000);
+    });
+  } catch (error: any) {
+    this.logger.error('RabbitMQ bağlantı hatası:', error?.message);
+    setTimeout(() => this.connectToBroker(), 5000);
   }
+}
 
   // Parametreyi any'den DTO modelimize çeviriyoruz:
   async createAndPublish(data: CreateShipmentDto) { 

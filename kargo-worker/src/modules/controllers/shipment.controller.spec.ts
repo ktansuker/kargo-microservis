@@ -1,7 +1,6 @@
 /* eslint-disable */
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { AppController } from './shipment.controller';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -9,15 +8,16 @@ describe('AppController', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
     }).compile();
 
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('healthCheck', () => {
+    it('worker ayakta olduğunu belirten mesajı döner', () => {
+      expect(appController.healthCheck()).toBe(
+        'Kargo Worker (Job) başarıyla çalışıyor ve kuyruğu dinliyor!',
+      );
     });
   });
 });
