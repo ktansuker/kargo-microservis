@@ -96,8 +96,11 @@ export class CargoConnectionService {
         { username: this.username, password: this.password },
       );
 
-      this.headers['Authorization'] = `Basic ${response.data.token}`;
-      this.logger.log("Login başarılı, token header'a yazıldı.");
+      this.logger.warn(`RAW LOGIN RESPONSE: ${JSON.stringify(response.data)}`);
+
+  const { token, tokenType } = response.data;
+  this.headers['Authorization'] = `${tokenType} ${token}`;
+  this.logger.log(`Login başarılı, token header'a yazıldı (tokenType: ${tokenType}).`);
     } catch (error) {
       const axiosError = error as AxiosError;
       const reason = axiosError.response?.data

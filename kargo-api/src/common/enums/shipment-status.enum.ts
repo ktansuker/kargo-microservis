@@ -5,6 +5,8 @@ export enum ShipmentStatus {
   RETRYING = 'YENIDEN_DENENIYOR',
   FAILED = 'HATALI_DMQ', 
 
+  VALIDATION_FAILED = 'DOGRULAMA_HATASI',
+
   // Borusan Lojistik PDF Statü Kodları
   BORUSAN_CREATED = 'CRE',
   BORUSAN_AT_LOGISTICS = 'LOC',
