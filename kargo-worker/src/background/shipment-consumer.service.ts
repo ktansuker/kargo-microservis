@@ -193,7 +193,7 @@ export class ShipmentConsumerService implements OnModuleInit {
       );
     }
 
-    await this.shipmentService.updateStatus(payload.TransactionID, 'BAŞARILI');
+    await this.shipmentService.updateStatus(payload.TransactionID, 'BASARILI');
     this.logger.log(
       `[BAŞARILI] ${payload.ConsignmentNo} başarıyla ${providerCode} sistemine iletildi. ` +
         `(trackingNumber: ${responseData.data?.trackingNumber})`,

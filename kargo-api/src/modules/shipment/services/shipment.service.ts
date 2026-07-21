@@ -49,15 +49,11 @@ export class ShipmentService
     }
   }
 
-  /**
-   * @throws {ShipmentValidationException} DTO geçersizse.
-   * @throws {RabbitMqNotReadyException} kanal henüz hazır değilse.
-   */
-  async createAndPublish(data: CreateShipmentDto): Promise<PublishResult> {
+ async createAndPublish(data: CreateShipmentDto): Promise<PublishResult> {
     this.assertChannelReady();
-    this.assertValidDto(data);
 
     try {
+      this.assertValidDto(data);
       await this.saveShipment(data, ShipmentStatus.PENDING);
       this.publishToQueue(data);
 
@@ -68,7 +64,6 @@ export class ShipmentService
     }
   }
 
-  /** @throws {RabbitMqNotReadyException} */
   private assertChannelReady(): void {
     if (!this.channel) {
       this.logger.error('RabbitMQ kanalı henüz hazır değil, bağlantı bekleniyor...');
@@ -76,7 +71,6 @@ export class ShipmentService
     }
   }
 
-  /** @throws {ShipmentValidationException} */
   private assertValidDto(data: CreateShipmentDto): void {
     const dtoInstance = plainToInstance(CreateShipmentDto, data);
     const errors = validateSync(dtoInstance);
@@ -136,6 +130,27 @@ export class ShipmentService
 
     await this.shipmentRepository.save(failedShipment);
   }
+
+  // ---------------------------------------------------------------------
+  // ↓↓↓ YENİ EKLENEN KISIM ↓↓↓
+  // ---------------------------------------------------------------------
+
+  async findAll(status?: string): Promise<Shipment[]> {
+    const where = status ? { status: status as any } : {};
+    return this.shipmentRepository.find({
+      where,
+      order: { createdAt: 'DESC' },
+      take: 200,
+    });
+  }
+
+  async findOne(id: string): Promise<Shipment | null> {
+    return this.shipmentRepository.findOneBy({ id });
+  }
+
+  // ---------------------------------------------------------------------
+  // ↑↑↑ YENİ EKLENEN KISIM ↑↑↑
+  // ---------------------------------------------------------------------
 
   async onModuleDestroy() {
     await this.channel?.close();
