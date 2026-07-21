@@ -8,9 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
       - name: Copy project files to VM
         uses: appleboy/scp-action@v0.1.7
         with:

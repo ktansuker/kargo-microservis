@@ -1,0 +1,16 @@
+services:
+  api:
+    build:
+      context: .
+      target: runtime
+    image: kargoapi:latest
+    container_name: kargoapi
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      # İstenirse kimlik bilgileri override edilebilir:
+      # - API_USERNAME=PO_ARVATO_DEV
+      # - API_PASSWORD=Arvato321!
+      # - TOKEN_TTL_SECONDS=3600
+    restart: unless-stopped
