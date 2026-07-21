@@ -1,9 +1,8 @@
 /* eslint-disable */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { Shipment } from './shipment.entity';
+import { Shipment } from './modules/shipment/entities/shipment.entity';
+import { ShipmentModule } from './modules/shipment/shipment.module';
 
 @Module({
   imports: [
@@ -18,10 +17,9 @@ import { Shipment } from './shipment.entity';
       autoLoadEntities: true,
       synchronize: true,
     }),
-    // Hatanın sebebi buranın eksik olması veya kaydedilmemesidir:
-    TypeOrmModule.forFeature([Shipment]), 
+    ShipmentModule, // Yeni modülümüzü buraya bağladık!
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [], // İçi boş kalmalı
+  providers: [],   // İçi boş kalmalı
 })
 export class AppModule {}

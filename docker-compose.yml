@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   # 1. Altyapı: RabbitMQ (Sabit Container)
   rabbitmq:
     image: rabbitmq:3-management
     networks:
-      - kargo_network # <--- BUNU EKLE
+      - kargo_network
     container_name: kargo_rabbitmq
     ports:
       - "5672:5672"
@@ -19,7 +17,7 @@ services:
   postgres:
     image: postgres:15
     networks:
-      - kargo_network # <--- BUNU EKLE
+      - kargo_network
     container_name: kargo_postgres
     ports:
       - "5432:5432"
@@ -51,8 +49,8 @@ services:
       - postgres
     restart: always
 
-  # 4. Kargo Job (Worker) Container'ı
- # --- 1. İŞÇİ: BORUSAN WORKER ---
+  # 4. Kargo Job (Worker) Container'ları
+  # --- 1. İŞÇİ: BORUSAN WORKER ---
   borusan_worker:
     build:
       context: ./kargo-worker
@@ -65,13 +63,19 @@ services:
       - DB_PASSWORD=kargopassword
       - DB_DATABASE=kargodb
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - CARGO_API_BASE_URL=http://kargoapi:8000
+      - CARGO_API_USERNAME=PO_ARVATO_DEV
+      - CARGO_API_PASSWORD=Arvato321!
     depends_on:
       - rabbitmq
       - postgres
+      - kargo-api
+      - kargoapi
     networks:
       - kargo_network
     restart: always
 
+  # --- 2. İŞÇİ: ARAS WORKER ---
   aras_worker:
     build:
       context: ./kargo-worker
@@ -84,12 +88,51 @@ services:
       - DB_PASSWORD=kargopassword
       - DB_DATABASE=kargodb
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - CARGO_API_BASE_URL=http://kargoapi:8000
+      - CARGO_API_USERNAME=PO_ARVATO_DEV
+      - CARGO_API_PASSWORD=Arvato321!
     depends_on:
       - rabbitmq
       - postgres
+      - kargo-api
+      - kargoapi
     networks:
       - kargo_network
     restart: always
+
+  # 5. Test Simülatörü: kargoapi (Borusan'ın local simülasyonu)
+  kargoapi:
+    build:
+      context: ./kargoapi
+      target: runtime
+    container_name: kargoapi_service
+    environment:
+      - PORT=8000
+      # İstenirse override edilebilir (varsayılanlar zaten bunlar):
+      # - API_USERNAME=PO_ARVATO_DEV
+      # - API_PASSWORD=Arvato321!
+      # - TOKEN_TTL_SECONDS=3600
+    ports:
+      - "8000:8000"
+    networks:
+      - kargo_network
+    restart: unless-stopped
+
+  # 6. Frontend Dashboard
+  kargo-dashboard:
+    build:
+      context: ./kargo-dashboard
+      args:
+        - "VITE_KARGO_API_URL=http://localhost:3000"
+    container_name: kargo_dashboard_service
+    ports:
+      - "8090:80"
+    depends_on:
+      - kargo-api
+    networks:
+      - kargo_network
+    restart: unless-stopped
+
 networks:
   kargo_network:
     driver: bridge
