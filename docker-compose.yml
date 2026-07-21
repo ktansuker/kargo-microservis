@@ -123,7 +123,7 @@ services:
     build:
       context: ./kargo-dashboard
       args:
-        - "VITE_KARGO_API_URL=http://localhost:3000"
+        - "VITE_KARGO_API_URL=http://74.162.65.83:3000"
     container_name: kargo_dashboard_service
     ports:
       - "8090:80"
