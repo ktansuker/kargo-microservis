@@ -13,11 +13,11 @@ import { PublishResult } from '../../../common/interfaces/publish-result.interfa
 import { ShipmentValidationException } from '../../../common/exceptions/shipment-validation.exception';
 import { RabbitMqNotReadyException } from '../../../common/exceptions/rabbitmq-not-ready.exception';
 import { ShipmentPublisher } from '../interfaces/shipment-publisher.interface';
+import { paginate, Pagination, IPaginationOptions } from 'nestjs-typeorm-paginate';
 
 @Injectable()
 export class ShipmentService
-  implements OnModuleInit, OnModuleDestroy, ShipmentPublisher
-{
+  implements OnModuleInit, OnModuleDestroy, ShipmentPublisher {
   private connection: amqp.ChannelModel | null = null;
   private channel: amqp.Channel | null = null;
   private readonly logger = new Logger(ShipmentService.name);
@@ -25,7 +25,7 @@ export class ShipmentService
   constructor(
     @InjectRepository(Shipment)
     private shipmentRepository: Repository<Shipment>,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     await this.connectToBroker();
@@ -49,7 +49,7 @@ export class ShipmentService
     }
   }
 
- async createAndPublish(data: CreateShipmentDto): Promise<PublishResult> {
+  async createAndPublish(data: CreateShipmentDto): Promise<PublishResult> {
     this.assertChannelReady();
 
     try {
@@ -135,13 +135,36 @@ export class ShipmentService
   // ↓↓↓ YENİ EKLENEN KISIM ↓↓↓
   // ---------------------------------------------------------------------
 
-  async findAll(status?: string): Promise<Shipment[]> {
-    const where = status ? { status: status as any } : {};
-    return this.shipmentRepository.find({
-      where,
-      order: { createdAt: 'DESC' },
-      take: 200,
-    });
+  async findAll(
+    options: IPaginationOptions,
+    status?: string,
+    provider?: string,
+    search?: string,
+  ): Promise<Pagination<Shipment>> {
+    const queryBuilder = this.shipmentRepository.createQueryBuilder('shipment');
+
+    // 1. Statü Filtresi
+    if (status && status !== 'ALL') {
+      queryBuilder.andWhere('shipment.status = :status', { status });
+    }
+
+    // 2. Kargo Firması Filtresi
+    if (provider && provider !== 'ALL') {
+      queryBuilder.andWhere('shipment.cargoProviderCode = :provider', { provider });
+    }
+
+    // 3. Arama Çubuğu (TransactionID, Konsinye No veya Alıcı İsminde arar)
+    // PostgreSQL kullandığımız için büyük/küçük harf duyarsız ILIKE kullanıyoruz
+    if (search) {
+      queryBuilder.andWhere(
+        '(shipment.transactionId ILIKE :search OR shipment.consignmentNo ILIKE :search OR shipment.recipientName ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    queryBuilder.orderBy('shipment.createdAt', 'DESC');
+
+    return paginate<Shipment>(queryBuilder, options);
   }
 
   async findOne(id: string): Promise<Shipment | null> {
